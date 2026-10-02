@@ -952,7 +952,8 @@ function getSprite(name, big, pal){
   const key = name+big+pal.join();
   if(sprCache[key]) return sprCache[key];
   const rows = SPR[name];
-  const bb = BIG_BODY[name].slice(); // torso mais longo, pernas mais curtas
+  if(big && !BIG_BODY[name]) big = false;
+  const bb = (BIG_BODY[name]||[]).slice(); // torso mais longo, pernas mais curtas
   const list = big ? rows.slice(0,7).concat(bb.slice(0,5), [bb[4],bb[4]], bb.slice(5,14), bb.slice(16)) : rows;
   const c = document.createElement('canvas'); c.width = 12; c.height = list.length;
   const g = c.getContext('2d');
