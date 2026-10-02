@@ -12,11 +12,13 @@
   #touch div{display:flex;gap:8px;pointer-events:auto}
   #touch button{width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(255,255,255,.18);color:#fff;font-size:16px;font-weight:700;touch-action:none}
   #touch button.on{background:rgba(255,255,255,.45)}
-  @media (pointer:coarse){#touch{display:flex}}
+  #pauseBtn{display:none;position:fixed;top:8px;right:8px;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.5);background:rgba(255,255,255,.18);color:#fff;font-weight:700;z-index:5}
+  @media (pointer:coarse){#touch{display:flex}#pauseBtn{display:block}}
 </style>
 </head>
 <body>
 <div id="wrap"><canvas id="c" width="800" height="448"></canvas></div>
+<button id="pauseBtn" onclick="togglePause()">II</button>
 <div id="touch">
   <div><button data-k="left">◀</button><button data-k="down">▼</button><button data-k="right">▶</button></div>
   <div><button data-k="fire">FOGO</button><button data-k="run">COR</button><button data-k="jump">PULA</button></div>
@@ -116,6 +118,7 @@ addEventListener('keydown', e => {
       else if(/^Digit[1-9]$/.test(e.code) && +e.code.slice(5)-1 < n) selLevel = +e.code.slice(5)-1;
     }
     if(e.code==='KeyM') musicToggle();
+    if(e.code==='KeyP' || e.code==='Escape') togglePause();
     if(e.code==='Enter'||e.code==='Space') advance();
   }
 });
@@ -135,6 +138,7 @@ cv.addEventListener('pointerdown', ev => {
   }
   advance();
 });
+document.addEventListener('visibilitychange', () => { if(document.hidden && state!=='title' && state!=='over' && state!=='win') paused = true; });
 function readInput(){
   inp.left  = keys.ArrowLeft || keys.KeyA || touch.left;
   inp.right = keys.ArrowRight || keys.KeyD || touch.right;
@@ -329,10 +333,36 @@ function buildMain13(){
             lift(81,7.4,{vx:1, bx:[78*T,84*T]}), lift(88.5,8.4,{vx:-1, bx:[86.5*T,91.5*T]}),
             lift(123.2,5.5,{vx:1, bx:[121.2*T,126.2*T]}) ]};
 }
+// Fase 1-4 (castelo), transcrita do mapa. Linhas do mapa (0..12) viram linhas do jogo (+1).
+function buildMain14(){
+  const N = 160, g = emptyGrid(N), t = gridTools(g,N), L = r => r+1;
+  const n = (x0,x1,r0,r1=r0) => { for(let r=r0;r<=r1;r++) t.row(x0,x1,L(r),'n'); };
+  const lava = (x0,x1,r0,r1) => { for(let r=r0;r<=r1;r++) t.row(x0,x1,L(r),'v'); };
+  t.row(0,N-1,0,'n'); n(0,N-1,0);                       // teto
+  n(0,23,1,2); n(37,71,1,3); n(97,103,1,2); n(123,127,1,2); n(142,143,1,3); n(23,23,3);
+  t.set(80,L(1),'n'); t.set(88,L(1),'n');
+  n(0,2,5); n(0,3,6); n(0,4,7);                          // degraus iniciais
+  n(0,12,8,12); lava(13,14,10,12); n(15,25,8,12); lava(26,28,11,12);
+  n(29,31,8,12); lava(32,34,11,12); n(35,71,7,12); n(72,103,8,12);
+  n(104,N-1,11,12);                                      // chão baixo até a sala do Bowser
+  n(116,119,8,10); n(123,127,8,10);                      // plataformas
+  lava(128,140,11,12); t.row(128,140,L(8),'r');          // lava e ponte
+  n(141,143,7,10); t.set(141,L(6),'X');                  // plataforma do machado
+  // blocos laranja: pivôs das barras de fogo e blocos soltos
+  [[23,4],[30,8],[37,4],[49,4],[60,4],[67,4],[76,7],[80,2],[84,7],[88,2],[92,7],[138,4],[139,4]].forEach(([c,r]) => t.set(c,L(r),'U'));
+  t.set(30,L(4),'M');                                    // cogumelo / flor de fogo
+  [107,110,113].forEach(c => t.set(c,L(3),'c')); [106,109,112].forEach(c => t.set(c,L(7),'c'));
+  const bars = [[30,8],[49,4],[60,4],[67,4],[76,7],[84,7],[88,2]];
+  const fireBars = bars.map(([c,r],i) => ({cx:c*T+16, cy:L(r)*T+16, n:6, ang:i*.9, spd:-.04}));
+  const boss = {x:135*T, y:L(8)*T-56, w:52, h:56, t:0, hp:5, hit:0, dir:-1, vy:0, onGround:true, floorY:L(8)*T, xmin:130*T, xmax:138*T, state:'walk', gone:false};
+  return {grid:g, enemies:[], items:[], cols:N, theme:'castle', fireBars, podoboos:[], boss,
+    axe:{col:141, row:L(6)}, bridge:{c0:128, c1:140, row:L(8)}, toad:{col:153}, spawn:{x:7, feetRow:9}};
+}
 const LEVELS = [
   {name:'1-1', start:'main',  checkpoint:{area:'main', col:96, x:98.5, feetRow:12}, build:()=>({main:buildMain(), under:buildUnder()})},
   {name:'1-2', start:'start', checkpoint:{area:'main', col:84, x:82.5, feetRow:12}, build:()=>({start:buildStart12(), main:buildMain12(), bonus:buildBonus12(), exit:buildExit12()})},
   {name:'1-3', start:'main',  checkpoint:{area:'main', col:92, x:94, feetRow:10}, build:()=>({main:buildMain13()})},
+  {name:'1-4', start:'main',  checkpoint:{area:'main', col:74, x:76, feetRow:9}, build:()=>({main:buildMain14()})},
 ];
 let levelIndex = 0;
 
@@ -352,7 +382,7 @@ function newPlayer(){
 }
 
 /* ---------- Estado ---------- */
-let selLevel = 0, cpReached = false, stompChain = 0, timeAtFlag = 0, fwLeft = 0, fwTimer = 0, endWait = 0;
+let paused = false, selLevel = 0, cpReached = false, stompChain = 0, timeAtFlag = 0, fwLeft = 0, fwTimer = 0, endWait = 0;
 let state = 'title', score = 0, coinCount = 0, lives = 3, time = 400, timeTick = 0;
 function setCam(){ cam = COLS*T<=W ? -(W-COLS*T)/2 : Math.max(0, Math.min(COLS*T-W, player.x - W*.4)); }
 let cam = 0, frame = 0, flagY = 2*T, walkTimer = 0, deadTimer = 0, winBonus = 0, warp = null;
@@ -362,7 +392,7 @@ function resetLevel(keepCp = false){
   for(const k in store) delete store[k];
   Object.assign(store, LEVELS[levelIndex].build());
   loadArea(LEVELS[levelIndex].start); player = newPlayer();
-  if(A.spawn) player.x = A.spawn.x*T - player.w/2;
+  if(A.spawn){ player.x = A.spawn.x*T - player.w/2; if(A.spawn.feetRow!=null) player.y = A.spawn.feetRow*T - player.h; }
   const cp = LEVELS[levelIndex].checkpoint;
   if(keepCp && cpReached && cp){ // volta do ponto de retorno (metade da fase)
     loadArea(cp.area); player.x = cp.x*T - player.w/2; player.y = cp.feetRow*T - player.h;
@@ -772,9 +802,11 @@ function updateParts(){
   parts = parts.filter(q => q.t < (q.type==='text' ? 50 : q.type==='coin' ? 36 : q.type==='spark' ? 55 : 70));
   for(const k in bumps){ if(++bumps[k] > 8) delete bumps[k]; }
 }
+function togglePause(){ if(state!=='title' && state!=='over' && state!=='win') paused = !paused; }
 function update(){
   frame++;
   readInput();
+  if(paused){ if(Music.cur) musicStop(); return; }
   musicSync();
   if(state==='title'||state==='over'||state==='win'){ updateParts(); return; }
   if(state==='count'){ updateCount(); updateParts(); return; }
@@ -1226,11 +1258,12 @@ function draw(){
   }
   drawHUD();
   if(notice) text(notice.text, W/2, 100, 22, 'center', '#fcd800');
-  if(state==='title') overlay('SUPER BROS', ['← → ou A D: andar    Espaço / ↑ / W: pular','Shift / X: correr    ↓ / S: entrar no cano    C / F: fogo','Cogumelo: cresce    Flor: bola de fogo    Estrela: invencível','Procure os canos secretos! (segure ↓ em cima do cano)    M: música'], 'Aperte ENTER ou toque para começar');
+  if(state==='title') overlay('SUPER BROS', ['← → ou A D: andar    Espaço / ↑ / W: pular','Shift / X: correr    ↓ / S: entrar no cano    C / F: fogo','Cogumelo: cresce    Flor: bola de fogo    Estrela: invencível','Procure os canos secretos! (segure ↓ em cima do cano)    M: música    P: pausa'], 'Aperte ENTER ou toque para começar');
   if(state==='title'){
     text('◀   FASE '+LEVELS[selLevel].name+'   ▶', W/2, 408, 26, 'center', '#7fe0ff');
     text('← → ou números: escolher a fase', W/2, 432, 14, 'center', '#cfe8ff');
   }
+  if(paused){ ctx.fillStyle = 'rgba(0,0,30,.55)'; ctx.fillRect(0,0,W,H); text('PAUSADO', W/2, 200, 56, 'center', '#fcd800'); text('Aperte P para continuar', W/2, 250, 20, 'center', '#fff'); }
   if(state==='over') overlay('FIM DE JOGO', ['Pontos: '+score], 'ENTER para jogar de novo');
   if(state==='win') overlay('FASE COMPLETA!', A.toad ? ['Obrigado, Mario!', 'Mas a nossa princesa está em outro castelo!', 'Pontos: '+score] : ['Pontos: '+score, 'Bônus de tempo: '+winBonus], levelIndex+1<LEVELS.length ? 'ENTER para a próxima fase' : 'ENTER para jogar de novo');
 }

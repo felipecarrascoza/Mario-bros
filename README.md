@@ -15,6 +15,8 @@ Abra o `index.html` no navegador, ou publique no GitHub Pages (Settings → Page
 | Correr | Shift, X ou Z (ou ande um tempo na mesma direção) |
 | Entrar no cano | ↓ ou S em cima do cano (ou pelo lado, nos canos laterais) |
 | Bola de fogo | C ou F (com a flor) |
+| Pausar | P (ou Esc) |
+| Música | M liga e desliga |
 | Escolher a fase | ← → ou números, na tela inicial |
 
 No celular aparecem botões na tela.
@@ -24,9 +26,10 @@ No celular aparecem botões na tela.
 - **1-1**: fase de superfície com sala secreta.
 - **1-2**: superfície, corredor subterrâneo, plantas piranha, elevadores, sala de bônus e zona de teletransporte.
 - **1-3**: copas de cogumelo sobre um abismo, elevadores e Koopas voadores.
+- **1-4**: castelo com barras de fogo, lava, ponte, Bowser e o machado.
 
 As fases foram transcritas de mapas em baixa resolução, então algumas posições podem diferir do original em cerca de 1 bloco.
 
 ## Recursos
 
-Power-ups (cogumelo, flor de fogo, estrela, vida extra), inimigos (Goomba, Koopa, Koopa voador, planta piranha), blocos escondidos, tijolo de várias moedas, canos, elevadores e aceleração gradual ao andar.
+Ponto de retorno no meio da fase, pontuação em cadeia, bônus de tempo e fogos de artifício, música original, pausa e animação de morte. Power-ups (cogumelo, flor de fogo, estrela, vida extra), inimigos (Goomba, Koopa, Koopa voador, planta piranha), blocos escondidos, tijolo de várias moedas, canos, elevadores e aceleração gradual ao andar.
