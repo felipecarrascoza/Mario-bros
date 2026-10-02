@@ -17,7 +17,7 @@ Abra o `index.html` no navegador, ou publique no GitHub Pages (Settings → Page
 | Bola de fogo | C ou F (com a flor) |
 | Pausar | P (ou Esc) |
 | Música | M liga e desliga |
-| Escolher a fase | ← → ou números, na tela inicial |
+| Escolher a fase | Na tela inicial, digite o código → ← → ← ↓ ↑; depois ← → ou números |
 
 No celular aparecem botões na tela.
 

@@ -105,18 +105,24 @@ function musicToggle(){ Music.on = !Music.on; if(!Music.on) musicStop(); }
 /* ---------- Entrada ---------- */
 const keys = {}, touch = {left:false,right:false,down:false,jump:false,run:false,fire:false};
 const inp = {left:false,right:false,down:false,jump:false,run:false,fire:false};
-let jumpBuf = 0, prevJump = false, fireBuf = 0, prevFire = false;
+let cheatOn = false, cheatNew = false, cheatPos = 0, jumpBuf = 0, prevJump = false, fireBuf = 0, prevFire = false;
 addEventListener('keydown', e => {
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
   initAudio();
   if(!keys[e.code]){
     keys[e.code] = true;
-    if(state==='title'){ // escolher a fase (para testes)
+    if(state==='title'){ // cheat code: → ← → ← ↓ ↑ libera a escolha de fase
+      const CODE = ['ArrowRight','ArrowLeft','ArrowRight','ArrowLeft','ArrowDown','ArrowUp'];
+      if(e.code===CODE[cheatPos]) cheatPos++; else cheatPos = e.code===CODE[0] ? 1 : 0;
+      if(cheatPos===CODE.length){ cheatPos = 0; if(!cheatOn){ cheatOn = true; SND.coin(); cheatNew = true; } }
+    }
+    if(state==='title' && cheatOn && !cheatNew){ // escolher a fase (para testes)
       const n = LEVELS.length;
       if(['ArrowLeft','ArrowUp','KeyA','KeyW'].includes(e.code)) selLevel = (selLevel+n-1)%n;
       else if(['ArrowRight','ArrowDown','KeyD','KeyS'].includes(e.code)) selLevel = (selLevel+1)%n;
       else if(/^Digit[1-9]$/.test(e.code) && +e.code.slice(5)-1 < n) selLevel = +e.code.slice(5)-1;
     }
+    cheatNew = false;
     if(e.code==='KeyM') musicToggle();
     if(e.code==='KeyP' || e.code==='Escape') togglePause();
     if(e.code==='Enter'||e.code==='Space') advance();
@@ -132,7 +138,7 @@ document.querySelectorAll('#touch button').forEach(b => {
 });
 cv.addEventListener('pointerdown', ev => {
   initAudio();
-  if(state==='title'){ // toque nas laterais da faixa de seleção troca de fase
+  if(state==='title' && cheatOn){ // toque nas laterais da faixa de seleção troca de fase
     const r = cv.getBoundingClientRect(), fx = (ev.clientX-r.left)/r.width, fy = (ev.clientY-r.top)/r.height, n = LEVELS.length;
     if(fy > .84){ if(fx < .45) selLevel = (selLevel+n-1)%n; else if(fx > .55) selLevel = (selLevel+1)%n; else advance(); return; }
   }
@@ -1365,7 +1371,7 @@ function draw(){
   drawHUD();
   if(notice) text(notice.text, W/2, 100, 22, 'center', '#fcd800');
   if(state==='title') overlay('SUPER BROS', ['← → ou A D: andar    Espaço / ↑ / W: pular','Shift / X: correr    ↓ / S: entrar no cano    C / F: fogo','Cogumelo: cresce    Flor: bola de fogo    Estrela: invencível','Procure os canos secretos! (segure ↓ em cima do cano)    M: música    P: pausa'], 'Aperte ENTER ou toque para começar');
-  if(state==='title'){
+  if(state==='title' && cheatOn){
     text('◀   FASE '+LEVELS[selLevel].name+'   ▶', W/2, 408, 26, 'center', '#7fe0ff');
     text('← → ou números: escolher a fase', W/2, 432, 14, 'center', '#cfe8ff');
   }
