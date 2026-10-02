@@ -27,6 +27,7 @@ No celular aparecem botões na tela.
 - **1-2**: superfície, corredor subterrâneo, plantas piranha, elevadores, sala de bônus e zona de teletransporte.
 - **1-3**: copas de cogumelo sobre um abismo, elevadores e Koopas voadores.
 - **1-4**: castelo com barras de fogo, lava, ponte, Bowser e o machado.
+- **2-1**: Koopa Paratroopas saltitantes, blocos escondidos, cipó (bata no bloco e suba com ↑/W até o céu das moedas), mola (segure pulo ao cair nela para voar alto, necessário para a torre de 10 blocos) e sala de moedas pelo cano.
 
 As fases foram transcritas de mapas em baixa resolução, então algumas posições podem diferir do original em cerca de 1 bloco.
 
