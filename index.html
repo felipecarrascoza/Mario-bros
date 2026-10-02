@@ -378,7 +378,7 @@ function loadArea(name){
 }
 function saveArea(){ const a = store[area]; a.grid = grid; a.enemies = enemies; a.items = items; }
 function newPlayer(){
-  return {x:3*T+5, y:12*T-30, w:22, h:30, vx:0, vy:0, onGround:false, big:false, facing:1, coyote:0, inv:0, walk:0, dead:0, fire:false, star:0, runTime:0, rideLift:null, isPlayer:true};
+  return {x:3*T+5, y:12*T-30, w:22, h:30, vx:0, vy:0, onGround:false, big:false, facing:1, coyote:0, inv:0, walk:0, dead:0, fire:false, star:0, runTime:0, rideLift:null, grace:0, isPlayer:true};
 }
 
 /* ---------- Estado ---------- */
@@ -491,7 +491,7 @@ function collect(kind){
   else if(kind==='life'){ lives++; popText(player.x, player.y-10, '1UP'); SND.power(); }
 }
 function hurt(){
-  if(player.inv>0 || player.dead || player.star>0) return;
+  if(player.inv>0 || player.dead || player.star>0 || player.grace>0) return;
   if(player.big){ player.big = false; player.fire = false; player.y += 30; player.h = 30; player.inv = 120; SND.hurt(); }
   else die();
 }
@@ -552,6 +552,7 @@ function updatePlayer(){
   if(lifts.length) rideLifts(p, prevBottom);
   if(p.x < Math.max(cam,0)){ p.x = Math.max(cam,0); p.vx = Math.max(0,p.vx); }
   if(p.inv>0) p.inv--;
+  if(p.grace>0) p.grace--;
   if(p.star>0) p.star--;
   if(fireBuf>0){ fireBuf--; if(p.fire && fireballs.length<2){ fireballs.push({x:p.facing>0?p.x+p.w:p.x-12, y:p.y+p.h*.35, w:12, h:12, vx:0, vy:2, dir:p.facing}); fireBuf = 0; SND.stomp(); } }
   if(p.onGround && p.star<=0) stompChain = 0;
@@ -708,7 +709,7 @@ function rideLifts(p, prevBottom){
 }
 function overlap(a, b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
 function updateEnemies(){
-  const p = player;
+  const p = player, pvy0 = p.vy;   // pisões de um mesmo quadro usam a velocidade de antes do quique
   for(const e of enemies){
     if(e.dead){ if(--e.dead===0) e.remove = true; continue; }
     if(e.x > cam+W+80 || e.x < cam-160 || e.y>H+80) continue;
@@ -718,8 +719,8 @@ function updateEnemies(){
       else { const a = e.t/170*Math.PI*2; e.x = e.x0 + Math.sin(a)*3*T; e.dir = Math.cos(a)>0 ? 1 : -1; } // verde: voa de um lado para o outro
       if(state==='play' && !p.dead && overlap(p,e)){
         if(p.star>0){ e.dead = 30; stompScore(e); SND.stomp(); }
-        else if(p.vy>0 && (p.y+p.h)-e.y < 22){ // pisou: perde as asas e vira Koopa comum
-          stompScore(e); SND.stomp(); p.vy = inp.jump ? -10 : -7; p.onGround = false;
+        else if(pvy0>0 && (p.y+p.h)-e.y < 22){ // pisou: perde as asas e vira Koopa comum
+          stompScore(e); SND.stomp(); p.vy = inp.jump ? -10.6 : -9; p.onGround = false; p.grace = 12;
           e.type = 'koopa'; e.vy = 0; e.dir = -1; e.shell = 0; e.kick = 8;
         } else hurt();
       }
@@ -750,8 +751,8 @@ function updateEnemies(){
         e.shell = 2; e.dir = (p.x+p.w/2 < e.x+e.w/2) ? 1 : -1; e.kick = 15; addScore(400, e.x, e.y-10); SND.stomp();
       }
       else if(e.kick>0){ /* acabou de ser chutado */ }
-      else if(p.vy>0 && (p.y+p.h)-e.y < 20){
-        stompScore(e); SND.stomp(); p.vy = inp.jump ? -10 : -7; p.onGround = false;
+      else if(pvy0>0 && (p.y+p.h)-e.y < 20){
+        stompScore(e); SND.stomp(); p.vy = inp.jump ? -10.6 : -9; p.onGround = false; p.grace = 12;
         if(e.type==='koopa'){ if(e.shell===0){ e.y += e.h-28; e.h = 28; } e.shell = 1; e.kick = 8; }
         else e.dead = 30;
       } else hurt();
