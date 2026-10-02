@@ -354,7 +354,7 @@ function buildMain14(){
   [107,110,113].forEach(c => t.set(c,L(3),'c')); [106,109,112].forEach(c => t.set(c,L(7),'c'));
   const bars = [[30,8],[49,4],[60,4],[67,4],[76,7],[84,7],[88,2]];
   const fireBars = bars.map(([c,r],i) => ({cx:c*T+16, cy:L(r)*T+16, n:6, ang:i*.9, spd:-.04}));
-  const boss = {x:135*T, y:L(8)*T-56, w:52, h:56, t:0, hp:5, hit:0, dir:-1, vy:0, onGround:true, floorY:L(8)*T, xmin:130*T, xmax:138*T, state:'walk', gone:false};
+  const boss = {x:135*T, y:L(8)*T-64, w:60, h:64, t:0, hp:5, hit:0, dir:-1, vy:0, onGround:true, floorY:L(8)*T, xmin:130*T, xmax:138*T, state:'walk', gone:false};
   return {grid:g, enemies:[], items:[], cols:N, theme:'castle', fireBars, podoboos:[], boss,
     axe:{col:141, row:L(6)}, bridge:{c0:128, c1:140, row:L(8)}, toad:{col:153}, spawn:{x:7, feetRow:9}};
 }
@@ -362,7 +362,7 @@ const LEVELS = [
   {name:'1-1', start:'main',  checkpoint:{area:'main', col:96, x:98.5, feetRow:12}, build:()=>({main:buildMain(), under:buildUnder()})},
   {name:'1-2', start:'start', checkpoint:{area:'main', col:84, x:82.5, feetRow:12}, build:()=>({start:buildStart12(), main:buildMain12(), bonus:buildBonus12(), exit:buildExit12()})},
   {name:'1-3', start:'main',  checkpoint:{area:'main', col:92, x:94, feetRow:10}, build:()=>({main:buildMain13()})},
-  {name:'1-4', start:'main',  checkpoint:{area:'main', col:74, x:76, feetRow:9}, build:()=>({main:buildMain14()})},
+  {name:'1-4', start:'main',  checkpoint:{area:'main', col:70, x:72.5, feetRow:9}, build:()=>({main:buildMain14()})},
 ];
 let levelIndex = 0;
 
@@ -395,7 +395,7 @@ function resetLevel(keepCp = false){
   if(A.spawn){ player.x = A.spawn.x*T - player.w/2; if(A.spawn.feetRow!=null) player.y = A.spawn.feetRow*T - player.h; }
   const cp = LEVELS[levelIndex].checkpoint;
   if(keepCp && cpReached && cp){ // volta do ponto de retorno (metade da fase)
-    loadArea(cp.area); player.x = cp.x*T - player.w/2; player.y = cp.feetRow*T - player.h;
+    loadArea(cp.area); player.x = cp.x*T - player.w/2; player.y = cp.feetRow*T - player.h; player.inv = 90;   // alguns instantes de proteção
   }
   setCam(); time = 400; timeTick = 0; flagY = 2*T; jumpBuf = 0; warp = null; notice = null;
 }
@@ -1139,26 +1139,24 @@ function drawHazards(){
     R(x+6,y+12,20,12,'#fcd0a0'); R(x+10,y+15,3,4,'#000'); R(x+19,y+15,3,4,'#000'); R(x+8,y+24,16,8,'#2038ec');
   }
 }
+const BOWSER = ['........W.....W...........', '........WG...WW...........', '.......RWWRRWWW..W........', '.....GRRWWGGGGW..W...W....', '.OOOOOGGKKGGGG..WWW..W....', 'OOOOOOOGGGGGGGD.WWW.WWW...', 'OOOOOOOGGGGGGGDWWWWWWWW...', 'OOOOOOOGGGGGGGDGGGGWWWWW..', '.KWKWKWKGGGGGGDWGGGGGGDWW.', '.KKKKKKKGGGGGGDGGGGGWWGWW.', '.WKWKWKKGGGGGGDWWGGGOGWWWW', '.OOOOOOOGGGGGGDOGGGGGGWWWW', '.OOOOOOOGGGGGGDGGGGGGGGGW.', '..OOOO...GGGGGWGGGGGGGGGWD', '.........DGGGGGWGGWWGGWWWW', '........OOOOOGGWGGOGGGOWWW', '.......OOWOOOOGGWGGGGGWWWW', '.......OWOOOOOGGGGGGGGGWD.', '.......OOOOOOOGGWWGGGWWWD.', '.......OOOOOOOGGOGGGGOWWW.', '........OOOOOGGGGGGWWGWWW.', '..........O.OOOOOOOOOO....', '..........OOOOOOOOOOOOOO..', '.........OOOOOOOOOOOOOOOO.', '..........OOOOOOOOOOOOOOO.', '............OOOOOOOOOOOOO.', '...........OOOOOOOOOOOOOO.', '...........WWOO.....OWWWO.'];
+const BOW_PAL = {G:'#00b000', D:'#006e0a', W:'#ffffff', O:'#fcb060', K:'#000000', R:'#e03020'};
+const bowCache = {};
+function bowserSprite(flash){ // 26x28 px, olhando para a ESQUERDA
+  const k = flash ? 1 : 0; if(bowCache[k]) return bowCache[k];
+  const c = document.createElement('canvas'); c.width = 26; c.height = 28; const g = c.getContext('2d');
+  BOWSER.forEach((row,y) => { for(let x=0;x<26;x++){ const ch = row[x]; if(ch!=='.'){ g.fillStyle = flash ? '#ffffff' : BOW_PAL[ch]; g.fillRect(x,y,1,1); } } });
+  return bowCache[k] = c;
+}
 function drawBoss(b){
-  const x = Math.round(b.x-cam), y = Math.round(b.y), d = b.dir || -1, flash = b.hit>0 && Math.floor(frame/2)%2;
-  ctx.save(); ctx.translate(x+b.w/2, y); if(b.state==='fall') ctx.scale(1,-1), ctx.translate(0,-b.h); ctx.scale(-d,1);
-  const g = flash ? '#ffffff' : '#1f9a1f', gd = flash ? '#dddddd' : '#0e6612', o = flash ? '#ffffff' : '#f8b030';
-  // casco com espinhos
-  ctx.fillStyle = gd; for(const [sx,sy] of [[-20,14],[-10,8],[2,6],[14,10]]){ ctx.beginPath(); ctx.moveTo(sx-6,sy+10); ctx.lineTo(sx,sy-2); ctx.lineTo(sx+6,sy+10); ctx.fill(); }
-  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(-4,34,24,20,0,0,7); ctx.fill();
-  ctx.fillStyle = o; ctx.fillRect(-4,36,18,14);
-  // cabeça
-  ctx.fillStyle = o; ctx.beginPath(); ctx.ellipse(14,16,14,13,0,0,7); ctx.fill();
-  ctx.fillStyle = '#d02010'; ctx.beginPath(); ctx.moveTo(0,6); ctx.lineTo(8,-6); ctx.lineTo(18,4); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.fillRect(14,-2,4,8); ctx.fillRect(2,0,4,6);
-  ctx.fillStyle = '#fff'; ctx.fillRect(16,12,6,6); ctx.fillStyle = '#000'; ctx.fillRect(19,14,3,4);
-  const open = (Math.floor(b.t/20)%2===0);
-  ctx.fillStyle = '#7a1008'; ctx.fillRect(18,20,12,open?8:4); ctx.fillStyle = '#fff'; ctx.fillRect(20,20,3,3); ctx.fillRect(25,20,3,3);
-  // braços e pés
-  ctx.fillStyle = o; ctx.fillRect(14,32,12,6); ctx.fillRect(-16,52,12,6); ctx.fillRect(6,52,14,6);
+  const x = Math.round(b.x-cam), y = Math.round(b.y), right = (b.dir||-1) > 0;
+  const flash = b.hit>0 && Math.floor(frame/2)%2;
+  ctx.save();
+  if(b.state==='fall'){ ctx.translate(x+b.w/2, y+b.h); ctx.scale(1,-1); } else ctx.translate(x+b.w/2, y);
+  if(right) ctx.scale(-1,1);          // o desenho original olha para a esquerda
+  ctx.drawImage(bowserSprite(flash), -30, 0, 60, 64);
   ctx.restore();
 }
-
 function drawEnemy(e){
   const x = Math.round(e.x-cam), y = Math.round(e.y);
   if(x < -40 || x > W+40) return;
